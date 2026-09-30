@@ -53,6 +53,7 @@ public sealed class StorybookApp : MonoBehaviour
     // Browser fallback used by the WebGL template's pointerup handler.
     // Its y value is measured from the top of the visible canvas, like HTML.
     // The Unity object is named StorybookBootstrap in Main.unity.
+    [UnityEngine.Scripting.Preserve]
     public void BrowserPointer(string normalizedPosition)
     {
         if (string.IsNullOrEmpty(normalizedPosition)) return;
