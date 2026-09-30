@@ -14,6 +14,7 @@ public sealed class StorybookApp : MonoBehaviour
     private RectTransform pageRoot;
     private int currentPage = -1;
     private readonly Sprite[] cachedSprites = new Sprite[StorybookData.PageCount];
+    private static Sprite navigationDisc;
 
     private void Start()
     {
@@ -104,6 +105,91 @@ public sealed class StorybookApp : MonoBehaviour
             button.navigation = new Navigation { mode = Navigation.Mode.None };
             button.onClick.AddListener(() => ShowPage(destination));
         }
+
+        // Native visible arrows sit over the far left/right edges of the
+        // original footer buttons; central Back/Next/Start captions stay legible.
+        AddVisibleNavigationArrows(index);
+    }
+
+    private void AddVisibleNavigationArrows(int page)
+    {
+        // Always show both arrows. Home's previous arrow is visibly disabled.
+        AddNavigationArrow("PreviousArrow", false, page > 0,
+            Mathf.Max(0, page - 1), 27f, 797f);
+        AddNavigationArrow("NextArrow", true, true,
+            page == StorybookData.PageCount - 1 ? 0 : page + 1, 362f, 797f);
+    }
+
+    private void AddNavigationArrow(
+        string name, bool pointsRight, bool enabled, int destination,
+        float x, float y)
+    {
+        RectTransform root = MakeRect(name, pageRoot);
+        PlaceRelative(root, x, y, 42f, 42f);
+
+        Image disc = root.gameObject.AddComponent<Image>();
+        disc.sprite = GetNavigationDisc();
+        disc.type = Image.Type.Simple;
+        disc.color = enabled
+            ? new Color(.075f, .34f, .55f, 1f)
+            : new Color(.72f, .79f, .83f, 1f);
+        disc.raycastTarget = true;
+
+        Button button = root.gameObject.AddComponent<Button>();
+        button.targetGraphic = disc;
+        button.transition = Selectable.Transition.None;
+        button.navigation = new Navigation { mode = Navigation.Mode.None };
+        button.interactable = enabled;
+        if (enabled) button.onClick.AddListener(() => ShowPage(destination));
+
+        // Draw chevrons with two plain UGUI graphics instead of font glyphs.
+        // This keeps the arrows visible on desktop, Android and WebGL.
+        Vector2 tip = new Vector2(pointsRight ? 4.5f : -4.5f, 0f);
+        Vector2 upper = new Vector2(pointsRight ? -4.5f : 4.5f, 6.5f);
+        Vector2 lower = new Vector2(pointsRight ? -4.5f : 4.5f, -6.5f);
+        AddChevronStroke(root, "ArrowUpper", upper, tip);
+        AddChevronStroke(root, "ArrowLower", lower, tip);
+    }
+
+    private static void AddChevronStroke(
+        RectTransform parent, string name, Vector2 from, Vector2 to)
+    {
+        RectTransform line = MakeRect(name, parent);
+        line.anchorMin = line.anchorMax = new Vector2(.5f, .5f);
+        line.pivot = new Vector2(.5f, .5f);
+        Vector2 difference = to - from;
+        line.sizeDelta = new Vector2(difference.magnitude + 1f, 3.5f);
+        line.anchoredPosition = (from + to) * .5f;
+        line.localEulerAngles = new Vector3(
+            0f, 0f, Mathf.Atan2(difference.y, difference.x) * Mathf.Rad2Deg);
+        Image stroke = line.gameObject.AddComponent<Image>();
+        stroke.color = Color.white;
+        stroke.raycastTarget = false;
+    }
+
+    private static Sprite GetNavigationDisc()
+    {
+        if (navigationDisc != null) return navigationDisc;
+        const int side = 64;
+        Texture2D texture = new Texture2D(side, side, TextureFormat.RGBA32, false);
+        texture.name = "DewyNavigationDisc";
+        texture.filterMode = FilterMode.Bilinear;
+        texture.wrapMode = TextureWrapMode.Clamp;
+        for (int py = 0; py < side; py++)
+        {
+            for (int px = 0; px < side; px++)
+            {
+                float radius = Vector2.Distance(new Vector2(px + .5f, py + .5f),
+                    new Vector2(side * .5f, side * .5f));
+                float alpha = Mathf.Clamp01((side * .5f - .5f - radius) * 1.5f);
+                texture.SetPixel(px, py, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+        texture.Apply();
+        navigationDisc = Sprite.Create(texture,
+            new Rect(0f, 0f, side, side), new Vector2(.5f, .5f), 100f,
+            0, SpriteMeshType.FullRect);
+        return navigationDisc;
     }
 
     private Sprite LoadPage(int index)
