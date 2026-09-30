@@ -1,3 +1,4 @@
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,6 +16,9 @@ public sealed class StorybookApp : MonoBehaviour
     private int currentPage = -1;
     private readonly Sprite[] cachedSprites = new Sprite[StorybookData.PageCount];
     private static Sprite navigationDisc;
+    private int pointerDownPage = -1;
+    private int pointerDownDestination = -1;
+    private float lastNavigationAt = -10f;
 
     private void Start()
     {
@@ -24,12 +28,121 @@ public sealed class StorybookApp : MonoBehaviour
 
     private void Update()
     {
-        // Exact keyboard semantics from the supplied source index.html:
-        // left/right advances by one page, independently of the button labels.
+        // Keyboard navigation works even when an embedded page has no UI focus.
         if (Input.GetKeyDown(KeyCode.LeftArrow) && currentPage > 0)
-            ShowPage(currentPage - 1);
+            NavigateTo(currentPage - 1);
         else if (Input.GetKeyDown(KeyCode.RightArrow) && currentPage < StorybookData.PageCount - 1)
-            ShowPage(currentPage + 1);
+            NavigateTo(currentPage + 1);
+
+        // A second, direct pointer path makes WebGL navigation independent of
+        // StandaloneInputModule and invisible UGUI graphic raycasts.
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Began) RegisterPointerDown(touch.position);
+            else if (touch.phase == TouchPhase.Ended) RegisterPointerUp(touch.position);
+            else if (touch.phase == TouchPhase.Canceled) ResetPointer();
+        }
+        else
+        {
+            if (Input.GetMouseButtonDown(0)) RegisterPointerDown(Input.mousePosition);
+            if (Input.GetMouseButtonUp(0)) RegisterPointerUp(Input.mousePosition);
+        }
+    }
+
+    // Browser fallback used by the WebGL template's pointerup handler.
+    // Its y value is measured from the top of the visible canvas, like HTML.
+    // The Unity object is named StorybookBootstrap in Main.unity.
+    public void BrowserPointer(string normalizedPosition)
+    {
+        if (string.IsNullOrEmpty(normalizedPosition)) return;
+        string[] parts = normalizedPosition.Split(',');
+        if (parts.Length != 2) return;
+        if (!float.TryParse(parts[0], NumberStyles.Float,
+                CultureInfo.InvariantCulture, out float x) ||
+            !float.TryParse(parts[1], NumberStyles.Float,
+                CultureInfo.InvariantCulture, out float y)) return;
+        if (x < 0f || x > 1f || y < 0f || y > 1f) return;
+
+        int destination = DestinationAtBookPosition(
+            x * StorybookData.BookWidth, y * StorybookData.BookHeight);
+        if (destination >= 0) NavigateTo(destination);
+    }
+
+    private void RegisterPointerDown(Vector2 screenPosition)
+    {
+        pointerDownPage = currentPage;
+        pointerDownDestination = DestinationAtScreenPosition(screenPosition);
+    }
+
+    private void RegisterPointerUp(Vector2 screenPosition)
+    {
+        int destination = DestinationAtScreenPosition(screenPosition);
+        if (pointerDownPage == currentPage &&
+            pointerDownDestination >= 0 &&
+            destination == pointerDownDestination)
+            NavigateTo(destination);
+        ResetPointer();
+    }
+
+    private void ResetPointer()
+    {
+        pointerDownPage = -1;
+        pointerDownDestination = -1;
+    }
+
+    private int DestinationAtScreenPosition(Vector2 screenPosition)
+    {
+        if (pageRoot == null ||
+            !RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                pageRoot, screenPosition, null, out Vector2 localPosition))
+            return -1;
+
+        Rect visible = pageRoot.rect;
+        if (visible.width <= 0f || visible.height <= 0f) return -1;
+        float x = (localPosition.x - visible.xMin) / visible.width *
+                  StorybookData.BookWidth;
+        float y = (visible.yMax - localPosition.y) / visible.height *
+                  StorybookData.BookHeight;
+        return DestinationAtBookPosition(x, y);
+    }
+
+    private int DestinationAtBookPosition(float x, float y)
+    {
+        if (x < 0f || x > StorybookData.BookWidth ||
+            y < 0f || y > StorybookData.BookHeight) return -1;
+
+        // The arrows are ABOVE the source-image hotspots. In particular,
+        // the disabled home back arrow must not accidentally start the story.
+        if (Inside(x, y, 27f, 797f, 42f, 42f))
+            return currentPage > 0 ? currentPage - 1 : -1;
+        if (Inside(x, y, 362f, 797f, 42f, 42f))
+            return currentPage == StorybookData.PageCount - 1
+                ? 0 : currentPage + 1;
+
+        StorybookData.Hotspot[] buttons = StorybookData.Buttons[currentPage];
+        foreach (StorybookData.Hotspot button in buttons)
+            if (Inside(x, y, button.X, button.Y, button.Width, button.Height))
+                return button.Destination;
+        return -1;
+    }
+
+    private static bool Inside(float x, float y, float left, float top,
+        float width, float height)
+    {
+        return x >= left && x <= left + width &&
+               y >= top && y <= top + height;
+    }
+
+    private void NavigateTo(int destination)
+    {
+        if (destination < 0 || destination >= StorybookData.PageCount ||
+            destination == currentPage) return;
+        // Browser pointerup, Unity Input and UGUI can report the same gesture.
+        // Suppress its duplicate so one click advances EXACTLY one page.
+        if (Time.unscaledTime - lastNavigationAt < .18f) return;
+        lastNavigationAt = Time.unscaledTime;
+        ShowPage(destination);
     }
 
     private void CreateInfrastructure()
@@ -103,7 +216,7 @@ public sealed class StorybookApp : MonoBehaviour
             button.targetGraphic = hitGraphic;
             button.transition = Selectable.Transition.None;
             button.navigation = new Navigation { mode = Navigation.Mode.None };
-            button.onClick.AddListener(() => ShowPage(destination));
+            button.onClick.AddListener(() => NavigateTo(destination));
         }
 
         // Native visible arrows sit over the far left/right edges of the
@@ -140,7 +253,7 @@ public sealed class StorybookApp : MonoBehaviour
         button.transition = Selectable.Transition.None;
         button.navigation = new Navigation { mode = Navigation.Mode.None };
         button.interactable = enabled;
-        if (enabled) button.onClick.AddListener(() => ShowPage(destination));
+        if (enabled) button.onClick.AddListener(() => NavigateTo(destination));
 
         // Draw chevrons with two plain UGUI graphics instead of font glyphs.
         // This keeps the arrows visible on desktop, Android and WebGL.
