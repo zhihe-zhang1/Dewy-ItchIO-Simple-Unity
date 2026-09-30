@@ -16,6 +16,24 @@
     const canvas = document.querySelector('#unity-canvas');
     const loadingBar = document.querySelector('#unity-loading-bar');
     const progress = document.querySelector('#unity-progress-bar-full');
+    let unityInstance = null;
+
+    // Forward actual browser pointer releases to the Unity storybook as a
+    // backup. Embedded itch.io iframes can occasionally fail to deliver a
+    // UGUI Button.OnClick even though the canvas receives browser events.
+    // Normalized coordinates preserve positioning at mobile viewport sizes.
+    document.addEventListener('pointerup', event => {
+      if (!unityInstance) return;
+      const box = canvas.getBoundingClientRect();
+      if (box.width <= 0 || box.height <= 0) return;
+      const x = (event.clientX - box.left) / box.width;
+      const y = (event.clientY - box.top) / box.height;
+      if (x < 0 || x > 1 || y < 0 || y > 1) return;
+      unityInstance.SendMessage('StorybookBootstrap', 'BrowserPointer',
+        x.toFixed(6) + ',' + y.toFixed(6));
+    }, true);
+    canvas.addEventListener('pointerdown', () => canvas.focus(), { passive: true });
+
     const buildUrl = 'Build';
     const config = {
       arguments: [],
@@ -40,8 +58,11 @@
     loader.src = buildUrl + '/{{{ LOADER_FILENAME }}}';
     loader.onload = () => createUnityInstance(canvas, config, fraction => {
         progress.style.width = Math.round(100*fraction) + '%';
-      }).then(() => { loadingBar.style.display = 'none'; canvas.focus(); })
-        .catch(error => { alert(error); });
+      }).then(instance => {
+        unityInstance = instance;
+        loadingBar.style.display = 'none';
+        canvas.focus();
+      }).catch(error => { alert(error); });
     document.body.appendChild(loader);
   </script>
 </body>
