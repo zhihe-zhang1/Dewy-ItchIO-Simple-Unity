@@ -24,10 +24,18 @@ public sealed class StorybookBuild : IPreprocessBuildWithReport
         PlayerSettings.WebGL.template = "PROJECT:DewySimple";
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
-        EditorUserBuildSettings.SetBuildLocation(BuildTarget.WebGL, "Builds/WebGL");
-        EditorBuildSettings.scenes = new [] {
-            new EditorBuildSettingsScene("Assets/Scenes/Main.unity", true)
-        };
+        // Important: never change EditorUserBuildSettings.SetBuildLocation here.
+        // Build Automation owns its export location; redirecting it can leave
+        // the cloud export directory empty even when assets import correctly.
+        // Main.unity is already enabled in ProjectSettings/EditorBuildSettings.asset.
+    }
+
+    // Optional Unity Build Automation Advanced Settings > Pre-Export Method.
+    // Configure StorybookBuild.PreExport (NOT StorybookBuild.BuildWebGL).
+    // A pre-export hook must configure settings, not start another player build.
+    public static void PreExport()
+    {
+        ApplyWebGLSettings();
     }
 
     [MenuItem("Dewy Simple/Build WebGL for itch.io")]
