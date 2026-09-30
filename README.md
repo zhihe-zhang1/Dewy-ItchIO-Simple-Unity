@@ -37,10 +37,21 @@ Open `Assets/Scenes/Main.unity` and press Play.
 ## WebGL / itch.io build
 
 Unity menu: **Dewy Simple → Build WebGL for itch.io**.
-For Cloud Build Automation: repository branch `main`, target `WebGL`, scene
-`Assets/Scenes/Main.unity`.
-The build script applies `PROJECT:DewySimple`, Gzip + decompression fallback,
-and the 430×862 default WebGL dimensions.
+For **Unity Build Automation**: repository branch `main`, platform `WebGL`,
+scene `Assets/Scenes/Main.unity`. Use Unity's **standard WebGL build**, not the
+local manual build method. In Advanced Settings you may set the optional
+**Pre-Export Method** to `StorybookBuild.PreExport` to configure the template,
+Gzip + decompression fallback and 430×862 dimensions before export.
+**Do not set `StorybookBuild.BuildWebGL` as the Pre-Export Method.** Do not
+override the Cloud export/output directory with `Builds/WebGL`; Unity Build
+Automation assigns its own export path, which its publisher subsequently reads.
+The local editor menu `Dewy Simple → Build WebGL for itch.io` still outputs
+to `Builds/WebGL` for builds you run on your own computer.
+
+If Cloud reports `Build failed - export directory is empty`, download the Unity
+Editor log and inspect the FIRST earlier compilation/build error as well; the
+Publishing-stage `Could not find index.html` warning is downstream of the
+missing export and is not by itself a diagnosis.
 
 After compiling, ZIP the **contents** of `Builds/WebGL` so `index.html` is at
 ZIP root. Upload that ZIP to itch.io and tick *This file will be played in the browser*.
