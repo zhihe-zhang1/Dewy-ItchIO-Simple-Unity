@@ -1,0 +1,61 @@
+name: Restore complete Unity storybook
+
+on:
+  push:
+    paths:
+      - 'bootstrap/**'
+      - '.github/workflows/restore-unity-project.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore-and-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Restore exact archived Unity source files
+        shell: bash
+        run: |
+          cat bootstrap/part1.b64 bootstrap/part2.b64 bootstrap/part3.b64 | base64 --decode > /tmp/dewy_project_sources.tar.xz
+          echo "aa394db6b198e27c16bc182d4364f9ef2c3b11974bb345a567fb48ac8632bf2c  /tmp/dewy_project_sources.tar.xz" | sha256sum --check --status
+          tar -xJf /tmp/dewy_project_sources.tar.xz -C .
+          test -f Assets/Scenes/Main.unity
+          test -f Assets/Scripts/StorybookApp.cs
+          test -f SourceReference/index.html
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install screenshot and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright pillow beautifulsoup4
+          python -m playwright install --with-deps chromium
+
+      - name: Recreate six lossless source-page PNGs
+        run: python tools/capture_source_pages.py
+
+      - name: Verify complete Unity project
+        run: python -m unittest discover -s tests -v
+
+      - name: Publish Unity project and page resources to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .gitignore Assets Packages ProjectSettings SourceReference README.md LICENSE_NOTICE.md tests tools 使用说明_中文.md
+          if git diff --cached --quiet; then
+            echo "Unity project already matches the archive."
+          else
+            git commit -m "feat: publish complete simple Unity storybook and six exact pages"
+            git push origin HEAD:main
+          fi
