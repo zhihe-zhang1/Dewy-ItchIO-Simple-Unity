@@ -9,8 +9,9 @@ class CloudBuildExportTests(unittest.TestCase):
     def test_cloud_preprocessing_cannot_redirect_export_folder(self):
         code = (ROOT / 'Assets/Editor/StorybookBuild.cs').read_text(encoding='utf-8')
         config = code.split('public static void ApplyWebGLSettings()', 1)[1].split('public static void PreExport()', 1)[0]
-        self.assertNotRegex(config, r'(?m)^\\s*EditorUserBuildSettings\\.SetBuildLocation\\s*\\(')
-        self.assertNotRegex(config, r'(?m)^\\s*EditorBuildSettings\\.scenes\\s*=')
+        executable = '\\n'.join(line for line in config.splitlines() if not line.lstrip().startswith('//'))
+        self.assertNotIn('EditorUserBuildSettings.SetBuildLocation(', executable)
+        self.assertNotIn('EditorBuildSettings.scenes =', executable)
         self.assertIn('public void OnPreprocessBuild(BuildReport report)', code)
 
     def test_cloud_hook_only_configures_settings(self):
