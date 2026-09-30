@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="author" content="Zhihe Zhang" />
+<title>Dewy's Wonderful Water Journey</title>
+<style>
+  :root {
+    --ink: #16324a;
+    --muted: #5f7585;
+    --card: rgba(255,255,255,.94);
+    --line: rgba(22,50,74,.16);
+    --blue: #2479b8;
+    --blue-dark: #145b8c;
+    --cream: #fffaf0;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    color: var(--ink);
+    background: #dceff8;
+    overflow-x: hidden;
+  }
+
+  button { font: inherit; }
+
+  .app {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+  }
+
+  .book {
+    width: min(100%, 430px);
+    min-height: min(860px, calc(100vh - 36px));
+    background: #ffffff;
+    border: 1px solid rgba(22,50,74,.12);
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(28,72,103,.17);
+    position: relative;
+  }
+
+  .page {
+    min-height: min(860px, calc(100vh - 36px));
+    display: none;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .page.active { display: grid; }
+
+  .topbar {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 18px 11px;
+    background: rgba(255,255,255,.95);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: .02em;
+  }
+
+  .counter {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #eef7fb;
+    color: var(--blue-dark);
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  .content {
+    display: grid;
+    grid-template-rows: auto minmax(300px, 1fr) auto;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .title-block h1,
+  .title-block h2 {
+    margin: 0 0 7px;
+    line-height: 1.08;
+  }
+
+  .title-block h1 { font-size: clamp(30px, 8vw, 42px); }
+  .title-block h2 { font-size: clamp(24px, 6.6vw, 32px); }
+
+  .eyebrow {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--blue-dark);
+  }
+
+  .subtitle,
+  .story-text {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .illustration {
+    min-height: 330px;
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(22,50,74,.1);
+    background: #eef8fc;
+  }
+
+  .illustration svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 330px;
+  }
+
+  .fact-card {
+    border-radius: 18px;
+    padding: 14px 15px;
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+
+  .fact-card strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--blue-dark);
+    font-size: 14px;
+  }
+
+  .fact-card p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 13px 18px 18px;
+    border-top: 1px solid var(--line);
+    background: #ffffff;
+  }
+
+  .nav.one { grid-template-columns: 1fr; }
+
+  .btn {
+    min-height: 50px;
+    border: 0;
+    border-radius: 16px;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 800;
+  }
+
+  .btn-primary {
+    background: var(--blue);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: #edf4f7;
+    color: var(--ink);
+  }
+
+  .btn:focus-visible {
+    outline: 3px solid #f0b84b;
+    outline-offset: 2px;
+  }
+
+  .credits-card {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    min-height: 420px;
+    padding: 28px 22px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #eef9ff 0%, #fffaf0 100%);
+    border: 1px solid var(--line);
+  }
+
+  .credits-card h2 { margin: 0 0 12px; font-size: 31px; }
+  .credits-card p { margin: 4px 0; line-height: 1.55; color: var(--muted); }
+  .student-name {
+    margin-top: 18px !important;
+    font-size: 20px;
+    color: var(--ink) !important;
+    font-weight: 900;
+  }
+
+  .drop-face { fill: #6bc5ed; stroke: #1c6f9d; stroke-width: 4; }
+  .eye { fill: #17334a; }
+  .smile { fill: none; stroke: #17334a; stroke-width: 4; stroke-linecap: round; }
+
+  @media (max-width: 480px) {
+    .app { padding: 0; }
+    .book,
+    .page { min-height: 100vh; border-radius: 0; }
+    .book { width: 100%; border: 0; box-shadow: none; }
+    .illustration, .illustration svg { min-height: 300px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="book" aria-label="Interactive storybook about the water cycle">
+
+    <!-- HOME -->
+    <section class="page active" data-page="0">
+      <header class="topbar">
+        <div class="brand">Dewy's Water Journey</div>
+        <div class="counter">Home</div>
+      </header>
+      <div class="content">
+        <div class="title-block">
+          <p class="eyebrow">A 2D Interactive Storybook</p>
+          <h1>The Wonderful Journey of a Little Water Drop</h1>
+          <p class="subtitle">Meet Dewy and follow one small drop through the water cycle.</p>
+        </div>
+
+        <div class="illustration" aria-label="Dewy floating above the ocean under a sunny sky">
+          <svg viewBox="0 0 800 700" role="img" aria-label="Ocean scene with Dewy, sun and clouds">
+            <rect width="800" height="700" fill="#cbeeff"/>
+            <circle cx="650" cy="125" r="72" fill="#ffd767" stroke="#e4ad2e" stroke-width="6"/>
+            <g fill="#ffffff" opacity=".95">
+              <ellipse cx="170" cy="150" rx="90" ry="44"/>
+              <ellipse cx="235" cy="150" rx="74" ry="38"/>
+              <ellipse cx="205" cy="118" rx="55" ry="38"/>
+            </g>
+            <path d="M0 430 C120 395 210 470 325 430 C440 390 530 470 800 415 L800 700 L0 700 Z" fill="#45a6d2"/>
+            <path d="M0 500 C140 455 230 535 360 495 C490 455 600 535 800 485" fill="none" stroke="#9ee3f5" stroke-width="18" opacity=".8"/>
+            <g transform="translate(330,255)">
+              <path class="drop-face" d="M70 0 C70 0 5 82 5 130 C5 174 33 204 70 204 C107 204 135 174 135 130 C135 82 70 0 70 0 Z"/>
+              <circle class="eye" cx="50" cy="120" r="7"/>
+              <circle class="eye" cx="90" cy="120" r="7"/>
+              <path class="smile" d="M49 147 Q70 163 91 147"/>
+            </g>
+            <rect x="90" y="585" width="620" height="70" rx="35" fill="#ffffff" opacity=".88"/>
+            <text x="400" y="630" text-anchor="middle" font-size="29" font-weight="700" fill="#145b8c">Every drop has a journey.</text>
+          </svg>
+        </div>
+
+        <div class="fact-card">
+          <strong>Story goal</strong>
+          <p>Turn the pages to see how water moves from the ocean to the sky, back to land, underground, and home again.</p>
+        </div>
+      </div>
+      <nav class="nav one" aria-label="Home navigation">
+        <button class="btn btn-primary" data-go="1">Start Story</button>
+      </nav>
+    </section>
+
+    <!-- SCENE 1 -->
+    <section class="page" data-page="1">
+      <header class="topbar">
+        <div class="brand">Dewy's Water Journey</div>
+        <div class="counter">1 / 4</div>
+      </header>
+      <div class="content">
+        <div class="title-block">
+          <p class="eyebrow">Scene 1 · Evaporation</p>
+          <h2>The Sunny Ocean</h2>
+          <p class="story-text">Dewy rests in the ocean while the warm sun shines above. Heat gives tiny water drops enough energy to rise into the air as water vapour.</p>
+        </div>
+        <div class="illustration">
+          <svg viewBox="0 0 800 700" role="img" aria-label="Sun warming the ocean as water rises into the air">
+            <defs>
+              <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9cddff"/><stop offset="1" stop-color="#eaf9ff"/></linearGradient>
+            </defs>
+            <rect width="800" height="700" fill="url(#sky1)"/>
+            <circle cx="630" cy="125" r="78" fill="#ffd466" stroke="#e5ac2b" stroke-width="6"/>
+            <path d="M0 480 C120 445 220 520 340 480 C470 435 575 525 800 470 L800 700 L0 700 Z" fill="#3d9fd0"/>
+            <path d="M0 555 C150 515 245 585 380 550 C525 510 620 585 800 540" fill="none" stroke="#b1ebf6" stroke-width="16"/>
+            <g fill="#ffffff" opacity=".82">
+              <circle cx="300" cy="360" r="13"/><circle cx="330" cy="320" r="10"/><circle cx="350" cy="270" r="8"/>
+              <circle cx="450" cy="390" r="12"/><circle cx="470" cy="345" r="9"/><circle cx="490" cy="300" r="7"/>
+            </g>
+            <g transform="translate(345,330) scale(.82)">
+              <path class="drop-face" d="M70 0 C70 0 5 82 5 130 C5 174 33 204 70 204 C107 204 135 174 135 130 C135 82 70 0 70 0 Z"/>
+              <circle class="eye" cx="50" cy="120" r="7"/><circle class="eye" cx="90" cy="120" r="7"/>
+              <path class="smile" d="M49 147 Q70 163 91 147"/>
+            </g>
+            <text x="400" y="100" text-anchor="middle" font-size="29" font-weight="800" fill="#145b8c">Warmth turns liquid water into vapour.</text>
+          </svg>
+        </div>
+        <div class="fact-card"><strong>Key idea: Evaporation</strong><p>Water at the surface can change from liquid into invisible water vapour and move upward into the atmosphere.</p></div>
+      </div>
+      <nav class="nav"><button class="btn btn-secondary" data-go="0">Back</button><button class="btn btn-primary" data-go="2">Next</button></nav>
+    </section>
+
+    <!-- SCENE 2 -->
+    <section class="page" data-page="2">
+      <header class="topbar"><div class="brand">Dewy's Water Journey</div><div class="counter">2 / 4</div></header>
+      <div class="content">
+        <div class="title-block">
+          <p class="eyebrow">Scene 2 · Condensation</p>
+          <h2>Cloud Workshop</h2>
+          <p class="story-text">Higher in the sky, the air is cooler. Dewy and many tiny droplets gather together, forming a soft cloud.</p>
+        </div>
+        <div class="illustration">
+          <svg viewBox="0 0 800 700" role="img" aria-label="Water droplets gathering into a cloud">
+            <rect width="800" height="700" fill="#bfe9ff"/>
+            <g fill="#ffffff" stroke="#8dc9e7" stroke-width="4">
+              <ellipse cx="395" cy="330" rx="185" ry="90"/>
+              <ellipse cx="295" cy="345" rx="110" ry="75"/>
+              <ellipse cx="500" cy="345" rx="125" ry="82"/>
+              <ellipse cx="395" cy="270" rx="118" ry="90"/>
+            </g>
+            <g fill="#65bee7" stroke="#1c6f9d" stroke-width="3">
+              <path d="M135 115 C135 115 105 155 105 180 C105 206 121 224 143 224 C165 224 181 206 181 180 C181 155 135 115 135 115 Z"/>
+              <path d="M650 160 C650 160 620 200 620 225 C620 251 636 269 658 269 C680 269 696 251 696 225 C696 200 650 160 650 160 Z"/>
+              <path d="M180 460 C180 460 150 500 150 525 C150 551 166 569 188 569 C210 569 226 551 226 525 C226 500 180 460 180 460 Z"/>
+              <path d="M620 465 C620 465 590 505 590 530 C590 556 606 574 628 574 C650 574 666 556 666 530 C666 505 620 465 620 465 Z"/>
+            </g>
+            <g transform="translate(325,405) scale(.72)">
+              <path class="drop-face" d="M70 0 C70 0 5 82 5 130 C5 174 33 204 70 204 C107 204 135 174 135 130 C135 82 70 0 70 0 Z"/>
+              <circle class="eye" cx="50" cy="120" r="7"/><circle class="eye" cx="90" cy="120" r="7"/>
+              <path class="smile" d="M49 147 Q70 163 91 147"/>
+            </g>
+            <text x="400" y="92" text-anchor="middle" font-size="29" font-weight="800" fill="#145b8c">Cooling vapour becomes tiny droplets.</text>
+          </svg>
+        </div>
+        <div class="fact-card"><strong>Key idea: Condensation</strong><p>When water vapour cools, it changes back into tiny liquid droplets. Many droplets together can form a cloud.</p></div>
+      </div>
+      <nav class="nav"><button class="btn btn-secondary" data-go="1">Back</button><button class="btn btn-primary" data-go="3">Next</button></nav>
+    </section>
+
+    <!-- SCENE 3 -->
+    <section class="page" data-page="3">
+      <header class="topbar"><div class="brand">Dewy's Water Journey</div><div class="counter">3 / 4</div></header>
+      <div class="content">
+        <div class="title-block">
+          <p class="eyebrow">Scene 3 · Precipitation</p>
+          <h2>Rain for the Forest</h2>
+          <p class="story-text">The cloud becomes heavy with water. Soon, Dewy falls as rain, helping the forest, soil and streams below.</p>
+        </div>
+        <div class="illustration">
+          <svg viewBox="0 0 800 700" role="img" aria-label="Rain falling from a cloud over a green forest">
+            <rect width="800" height="700" fill="#c6e6ef"/>
+            <g fill="#6d8390">
+              <ellipse cx="395" cy="160" rx="190" ry="78"/>
+              <ellipse cx="285" cy="180" rx="105" ry="70"/>
+              <ellipse cx="510" cy="180" rx="125" ry="72"/>
+            </g>
+            <g stroke="#3f9bc3" stroke-width="9" stroke-linecap="round">
+              <line x1="250" y1="260" x2="220" y2="335"/><line x1="340" y1="245" x2="310" y2="325"/>
+              <line x1="445" y1="250" x2="415" y2="335"/><line x1="550" y1="245" x2="520" y2="325"/>
+            </g>
+            <path d="M0 520 Q160 430 320 520 T640 510 T800 500 L800 700 L0 700 Z" fill="#75b86f"/>
+            <g>
+              <rect x="105" y="430" width="26" height="150" rx="12" fill="#76543f"/><circle cx="118" cy="410" r="75" fill="#4a9556"/>
+              <rect x="645" y="430" width="26" height="150" rx="12" fill="#76543f"/><circle cx="658" cy="405" r="78" fill="#4a9556"/>
+              <rect x="560" y="470" width="22" height="120" rx="11" fill="#76543f"/><circle cx="571" cy="455" r="62" fill="#5da563"/>
+            </g>
+            <g transform="translate(355,300) scale(.65)">
+              <path class="drop-face" d="M70 0 C70 0 5 82 5 130 C5 174 33 204 70 204 C107 204 135 174 135 130 C135 82 70 0 70 0 Z"/>
+              <circle class="eye" cx="50" cy="120" r="7"/><circle class="eye" cx="90" cy="120" r="7"/>
+              <path class="smile" d="M49 147 Q70 163 91 147"/>
+            </g>
+            <text x="400" y="90" text-anchor="middle" font-size="29" font-weight="800" fill="#274d61">Water returns to Earth as rain.</text>
+          </svg>
+        </div>
+        <div class="fact-card"><strong>Key idea: Precipitation</strong><p>Water falls from clouds as rain, snow, sleet or hail. Here, Dewy returns to the land as rain.</p></div>
+      </div>
+      <nav class="nav"><button class="btn btn-secondary" data-go="2">Back</button><button class="btn btn-primary" data-go="4">Next</button></nav>
+    </section>
+
+    <!-- SCENE 4 -->
+    <section class="page" data-page="4">
+      <header class="topbar"><div class="brand">Dewy's Water Journey</div><div class="counter">4 / 4</div></header>
+      <div class="content">
+        <div class="title-block">
+          <p class="eyebrow">Scene 4 · Infiltration & Collection</p>
+          <h2>Back to the Ocean</h2>
+          <p class="story-text">Some rain sinks into the soil and becomes groundwater. Other water joins streams and rivers. Together, these paths can carry Dewy back to the ocean.</p>
+        </div>
+        <div class="illustration">
+          <svg viewBox="0 0 800 700" role="img" aria-label="Cross-section showing groundwater, river and the ocean">
+            <rect width="800" height="330" fill="#bfe9ff"/>
+            <path d="M0 320 Q130 210 270 315 Q390 235 510 315 Q650 235 800 305 L800 390 L0 390 Z" fill="#6ba76a"/>
+            <path d="M0 390 L800 390 L800 700 L0 700 Z" fill="#b9895c"/>
+            <path d="M0 505 Q130 460 250 505 T500 510 T800 485 L800 700 L0 700 Z" fill="#8c684c" opacity=".75"/>
+            <path d="M180 300 C250 340 300 350 350 370 C430 400 505 400 625 370 L690 400 C570 455 440 465 325 430 C255 410 220 385 150 350 Z" fill="#51a8cf"/>
+            <path d="M305 420 C335 470 330 530 350 585" fill="none" stroke="#55b5db" stroke-width="22" stroke-linecap="round"/>
+            <path d="M350 585 C440 560 545 575 640 550" fill="none" stroke="#55b5db" stroke-width="28" stroke-linecap="round"/>
+            <path d="M640 550 C690 535 730 520 800 505 L800 700 L655 700 Z" fill="#3f9dca"/>
+            <g transform="translate(285,430) scale(.52)">
+              <path class="drop-face" d="M70 0 C70 0 5 82 5 130 C5 174 33 204 70 204 C107 204 135 174 135 130 C135 82 70 0 70 0 Z"/>
+              <circle class="eye" cx="50" cy="120" r="7"/><circle class="eye" cx="90" cy="120" r="7"/>
+              <path class="smile" d="M49 147 Q70 163 91 147"/>
+            </g>
+            <text x="400" y="85" text-anchor="middle" font-size="28" font-weight="800" fill="#145b8c">Water keeps moving through land and rivers.</text>
+            <text x="525" y="625" text-anchor="middle" font-size="23" font-weight="800" fill="#f4fbff">Groundwater</text>
+            <text x="650" y="350" text-anchor="middle" font-size="23" font-weight="800" fill="#145b8c">River</text>
+          </svg>
+        </div>
+        <div class="fact-card"><strong>The cycle continues</strong><p>The journey ends where another journey begins. Water can return to the ocean and start the cycle again.</p></div>
+      </div>
+      <nav class="nav"><button class="btn btn-secondary" data-go="3">Back</button><button class="btn btn-primary" data-go="5">Finish</button></nav>
+    </section>
+
+    <!-- CREDITS -->
+    <section class="page" data-page="5">
+      <header class="topbar"><div class="brand">Dewy's Water Journey</div><div class="counter">Credits</div></header>
+      <div class="content" style="grid-template-rows: 1fr;">
+        <div class="credits-card">
+          <div>
+            <svg width="105" height="140" viewBox="0 0 140 210" aria-hidden="true">
+              <path class="drop-face" d="M70 0 C70 0 5 82 5 130 C5 174 33 204 70 204 C107 204 135 174 135 130 C135 82 70 0 70 0 Z"/>
+              <circle class="eye" cx="50" cy="120" r="7"/><circle class="eye" cx="90" cy="120" r="7"/>
+              <path class="smile" d="M49 147 Q70 163 91 147"/>
+            </svg>
+            <h2>Thank You!</h2>
+            <p><strong>The Wonderful Journey of a Little Water Drop</strong></p>
+            <p>PROG2006 · Designing the User Experience</p>
+            <p class="student-name">Zhihe Zhang</p>
+            <p>Interactive prototype for educational storytelling.</p>
+            <p style="margin-top:18px;font-weight:800;color:#145b8c;">Save Water. Protect Every Drop.</p>
+          </div>
+        </div>
+      </div>
+      <nav class="nav"><button class="btn btn-secondary" data-go="4">Back</button><button class="btn btn-primary" data-go="0">Restart</button></nav>
+    </section>
+
+  </main>
+</div>
+<script>
+  (function () {
+    const pages = Array.from(document.querySelectorAll('.page'));
+    const buttons = document.querySelectorAll('[data-go]');
+
+    function showPage(index) {
+      pages.forEach(function (page, i) {
+        page.classList.toggle('active', i === index);
+      });
+      window.scrollTo(0, 0);
+      const heading = pages[index].querySelector('h1, h2');
+      if (heading) heading.setAttribute('tabindex', '-1');
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        showPage(Number(button.getAttribute('data-go')));
+      });
+    });
+
+    document.addEventListener('keydown', function (event) {
+      const current = pages.findIndex(function (page) { return page.classList.contains('active'); });
+      if (event.key === 'ArrowRight' && current < pages.length - 1) showPage(current + 1);
+      if (event.key === 'ArrowLeft' && current > 0) showPage(current - 1);
+    });
+  })();
+</script>
+</body>
+</html>

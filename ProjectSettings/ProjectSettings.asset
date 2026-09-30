@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 27
+  productGUID: 82eec21c04fa48fb97b1b6f96ed1188a
+  companyName: Zhihe Zhang
+  productName: Dewy's Wonderful Water Journey
+  defaultScreenWidth: 430
+  defaultScreenHeight: 862
+  defaultWebScreenWidth: 430
+  defaultWebScreenHeight: 862
+  m_ActiveColorSpace: 0
+  use32BitDisplayBuffer: 1
+  preserveFramebufferAlpha: 0
+  runInBackground: 1
+  captureSingleScreen: 0
+  resizableWindow: 0
+  fullscreenMode: 3
+  webGLCompressionFormat: 1
+  webGLDecompressionFallback: 1
+  webGLPowerPreference: 2
+  webGLInitialMemorySize: 32
+  webGLMaximumMemorySize: 2048
+  webGLMemoryGrowthMode: 2
+  webGLLinkerTarget: 1
+  webGLThreadsSupport: 0
+  webGLDeinitializesAccelerator: 0
+
+  activeInputHandler: 0

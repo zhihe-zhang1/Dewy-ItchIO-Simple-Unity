@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <link rel="stylesheet" href="TemplateData/style.css">
+</head>
+<body>
+  <main id="book-shell">
+    <canvas id="unity-canvas" width="430" height="862" tabindex="0"></canvas>
+    <div id="unity-loading-bar"><div id="unity-progress-bar-full"></div></div>
+    <div id="unity-warning"></div>
+  </main>
+  <script>
+    const canvas = document.querySelector('#unity-canvas');
+    const loadingBar = document.querySelector('#unity-loading-bar');
+    const progress = document.querySelector('#unity-progress-bar-full');
+    const buildUrl = 'Build';
+    const config = {
+      arguments: [],
+      dataUrl: buildUrl + '/{{{ DATA_FILENAME }}}',
+      frameworkUrl: buildUrl + '/{{{ FRAMEWORK_FILENAME }}}',
+      codeUrl: buildUrl + '/{{{ CODE_FILENAME }}}',
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + '/{{{ MEMORY_FILENAME }}}',
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + '/{{{ SYMBOLS_FILENAME }}}',
+#endif
+      streamingAssetsUrl: 'StreamingAssets',
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      showBanner: (message, level) => {
+        console[level === 'error' ? 'error' : 'warn'](message);
+      }
+    };
+    const loader = document.createElement('script');
+    loader.src = buildUrl + '/{{{ LOADER_FILENAME }}}';
+    loader.onload = () => createUnityInstance(canvas, config, fraction => {
+        progress.style.width = Math.round(100*fraction) + '%';
+      }).then(() => { loadingBar.style.display = 'none'; canvas.focus(); })
+        .catch(error => { alert(error); });
+    document.body.appendChild(loader);
+  </script>
+</body>
+</html>
