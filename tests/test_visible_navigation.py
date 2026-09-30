@@ -15,6 +15,6 @@ class VisibleNavigationTests(unittest.TestCase):
         self.assertIn('AddChevronStroke(root, "ArrowLower"', code)
         self.assertIn('PlaceRelative(root, x, y, 42f, 42f);', code)
         self.assertIn('GetNavigationDisc()', code)
-        self.assertIn('button.onClick.AddListener(() => ShowPage(destination));', code)
+        self.assertIn('button.onClick.AddListener(() => NavigateTo(destination));', code)
 
 if __name__ == '__main__': unittest.main()
